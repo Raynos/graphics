@@ -1,6 +1,6 @@
 {
   "name": "graphics",
-  "version": "0.1.0-3",
+  "version": "0.1.0-4",
   "description": "Efficient data structures that represent renderable scenes",
   "keywords": [],
   "author": "Raynos <raynos2@gmail.com>",
