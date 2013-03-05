@@ -41,8 +41,7 @@
     "test": "testem ci",
     "build-test": "browserify-server --bundle=test/index.js -o test/static/bundle.js --debug",
     "testem": "testem",
-    "example": "browservefy ./examples/simple.js --browserify='browserify-server' --live --indexed=./examples -- --debug --bundle",
-    "start": "node bin/server.js"
+    "example": "browservefy ./examples/simple.js --browserify='browserify-server' --live --indexed=./examples -- --debug --bundle"
   },
   "testling": {
     "files": "test/index.js",
