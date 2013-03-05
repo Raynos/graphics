@@ -1,6 +1,6 @@
 {
   "name": "graphics",
-  "version": "0.1.0-2",
+  "version": "0.1.0-3",
   "description": "Efficient data structures that represent renderable scenes",
   "keywords": [],
   "author": "Raynos <raynos2@gmail.com>",
@@ -42,7 +42,7 @@
     "build-test": "browserify-server --bundle=test/index.js -o test/static/bundle.js --debug",
     "testem": "testem",
     "example": "browservefy ./examples/simple.js --browserify='browserify-server' --live --indexed=./examples -- --debug --bundle",
-    "start": "node ./node_modules/.bin/browservefy ./examples/simple.js --browserify='browserify-server' --live --indexed=./examples -- --debug --bundle"
+    "start": "node bin/server.js"
   },
   "testling": {
     "files": "test/index.js",
