@@ -6,6 +6,10 @@
 
 Efficient data structures that represent renderable scenes
 
+This is a direct port of [Elm][7] to a commonJS JavaScript library.
+    The purpose is exploration of FRP in plain JavaScript and
+    maybe rewriting Elm's rendering core in more efficient JavaScript.
+
 ## Example
 
 ```js
@@ -47,3 +51,4 @@ open localhost:9966
   [4]: http://david-dm.org/Raynos/graphics
   [5]: http://ci.testling.com/Raynos/graphics.png
   [6]: http://ci.testling.com/Raynos/graphics
+  [7]: http://elm-lang.org/
