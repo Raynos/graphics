@@ -1,0 +1,67 @@
+{
+  "name": "graphics",
+  "version": "0.1.0",
+  "description": "Efficient data structures that represent renderable scenes",
+  "keywords": [],
+  "author": "Raynos <raynos2@gmail.com>",
+  "repository": "git://github.com/Raynos/graphics.git",
+  "main": "index",
+  "homepage": "https://github.com/Raynos/graphics",
+  "contributors": [
+    {
+      "name": "Raynos"
+    }
+  ],
+  "bugs": {
+    "url": "https://github.com/Raynos/graphics/issues",
+    "email": "raynos2@gmail.com"
+  },
+  "dependencies": {
+    "reducers": "git://github.com/Raynos/reducers",
+    "global": "~2.0.1",
+    "invoker": "~0.1.2"
+  },
+  "devDependencies": {
+    "tape": "~0.2.2",
+    "browserify-server": "~2.1.18",
+    "browservefy": "git://github.com/Raynos/browservefy",
+    "testem": "~0.2.56",
+    "reducible": "git://github.com/Raynos/reducible#1.x"
+  },
+  "peerDependencies": {
+    "reducible": "git://github.com/Raynos/reducible#1.x"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "http://github.com/Raynos/graphics/raw/master/LICENSE"
+    }
+  ],
+  "scripts": {
+    "test": "testem ci",
+    "build-test": "browserify-server --bundle=test/index.js -o test/static/bundle.js --debug",
+    "testem": "testem",
+    "example": "browservefy ./examples/simple.js --browserify='browserify-server' --live --indexed=./examples -- --debug --bundle"
+  },
+  "testling": {
+    "files": "test/index.js",
+    "browsers": {
+      "ie": "8..latest",
+      "firefox": [
+        "16..latest",
+        "nightly"
+      ],
+      "chrome": [
+        "22..latest",
+        "canary"
+      ],
+      "opera": [
+        "12..latest",
+        "next"
+      ],
+      "safari": "5.1..latest",
+      "ipad": "6.0..latest",
+      "iphone": "6.0..latest"
+    }
+  }
+}
