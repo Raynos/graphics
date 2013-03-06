@@ -14,13 +14,13 @@ This is a direct port of [Elm][7] to a commonJS JavaScript library.
 
 ```js
 var MousePosition = require("graphics/mouse").Position
-var lift = require("graphics/signal/lift")
+var map = require("graphics/signal/map")
 var plainText = require("graphics/element").plainText
 var render = require("graphics/render")
 
 // Lift the stream of mouse positions through the plainText
 // function
-var main = lift(MousePosition(), plainText)
+var main = map(MousePosition(), plainText)
 
 // render the stream of mouse position as text
 render(main)

@@ -7,7 +7,9 @@ function signal(callback, defaultValue) {
     return reducible(function (next, initial) {
         var invoke = invoker(next, initial)
 
-        invoke(defaultValue)
+        if (defaultValue !== undefined) {
+            invoke(defaultValue)
+        }
 
         callback(invoke)
     })

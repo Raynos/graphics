@@ -3,4 +3,5 @@ var render = require("../../render")
 
 var main = plainText("Hello, World!")
 
-render(main)
+render(main, false)
+// =>

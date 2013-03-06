@@ -19,14 +19,16 @@
   "dependencies": {
     "reducers": "git://github.com/Raynos/reducers",
     "global": "~2.0.1",
-    "invoker": "~0.1.2"
+    "invoker": "~0.1.2",
+    "tryme": "0.0.2"
   },
   "devDependencies": {
     "tape": "~0.2.2",
     "browserify-server": "~2.1.18",
     "browservefy": "git://github.com/Raynos/browservefy",
     "testem": "~0.2.56",
-    "reducible": "git://github.com/Raynos/reducible#1.x"
+    "reducible": "git://github.com/Raynos/reducible#1.x",
+    "tryme": "git://github.com/Raynos/tryme"
   },
   "peerDependencies": {
     "reducible": "git://github.com/Raynos/reducible#1.x"
@@ -41,7 +43,9 @@
     "test": "testem ci",
     "build-test": "browserify-server --bundle=test/index.js -o test/static/bundle.js --debug",
     "testem": "testem",
-    "example": "browservefy ./examples/simple.js --browserify='browserify-server' --live --indexed=./examples -- --debug --bundle"
+    "tryme": "tryme ./examples --live",
+    "example": "browservefy ./examples/simple.js --browserify='browserify-server' --live --indexed=./examples -- --debug --bundle",
+    "start": "node bin/server.js"
   },
   "testling": {
     "files": "test/index.js",
