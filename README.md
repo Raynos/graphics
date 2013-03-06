@@ -30,8 +30,14 @@ render(main)
 
 ```sh
 npm i
+
+# Either use example
 npm run example
 open localhost:9966
+
+# Or use tryme
+npm run tryme
+open localhost:8080
 ```
 
 ## Installation
