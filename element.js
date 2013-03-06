@@ -54,6 +54,7 @@ function video(width, height, source) {
     return new Element(guid(), new VideoElement(source), width, height)
 }
 
+// Int -> Int -> Position -> Element -> Element
 function container(width, height, position, elem) {
     return new Element(guid(), new ContainerElement(position, elem)
         , width, height)
