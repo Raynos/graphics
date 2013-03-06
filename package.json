@@ -1,6 +1,6 @@
 {
   "name": "graphics",
-  "version": "0.1.0-4",
+  "version": "0.1.0-6",
   "description": "Efficient data structures that represent renderable scenes",
   "keywords": [],
   "author": "Raynos <raynos2@gmail.com>",
@@ -20,7 +20,7 @@
     "reducers": "git://github.com/Raynos/reducers",
     "global": "~2.0.1",
     "invoker": "~0.1.2",
-    "tryme": "0.0.2"
+    "tryme": "git://github.com/Raynos/tryme"
   },
   "devDependencies": {
     "tape": "~0.2.2",
