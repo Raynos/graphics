@@ -19,7 +19,8 @@
   "dependencies": {
     "reducers": "git://github.com/Raynos/reducers",
     "global": "~2.0.1",
-    "invoker": "~0.1.2"
+    "invoker": "~0.1.2",
+    "tryme": "git://github.com/Raynos/tryme"
   },
   "devDependencies": {
     "tape": "~0.2.2",

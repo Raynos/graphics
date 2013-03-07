@@ -20,6 +20,8 @@ module.exports = {
         , type: "Position"
     }
     , container: container
+    , collage: collage
+    , toForm: toForm
 }
 
 // String -> Element
@@ -58,6 +60,18 @@ function video(width, height, source) {
 function container(width, height, position, elem) {
     return new Element(guid(), new ContainerElement(position, elem)
         , width, height)
+}
+
+// Int -> Int -> [Form] -> Element
+function collage(width, height, forms) {
+    return new Element(guid()
+        , new CollageElement(forms, width, height)
+        , width, height)
+}
+
+// Element -> { x: Number, y: Number } -> Form
+function toForm(elem, pos) {
+    return new Form(0, 1, pos, elem)
 }
 
 function Element(id, basicElement, width, height, opacity, color, link) {
@@ -179,6 +193,19 @@ ContainerElement.prototype.update =
         this.elem.update(elem.firstChild, previous.elem)
         setPos(this.position, elem.firstChild)
     }
+
+function CollageElement(forms, width, height) {
+    this.width = width
+    this.height = height
+    this.forms = forms
+}
+
+function Form(theta, scale, position, basicForm) {
+    this.theta = theta
+    this.scale = scale
+    this.position = position
+    this.basicForm = basicForm
+}
 
 
 function setPos(pos, elem) {
