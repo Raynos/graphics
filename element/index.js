@@ -1,6 +1,7 @@
 var document = require("global/document")
 
-var guid = require("./lib/guid")
+var guid = require("../lib/guid")
+var setPosition = require("./set-position")
 
 var pooledDiv = document.createElement("div")
 pooledDiv.style.visibility = "hidden"
@@ -22,6 +23,9 @@ module.exports = {
     , container: container
     , collage: collage
     , toForm: toForm
+    , rect: rect
+    , filled: filled
+    , flow: flow
 }
 
 // String -> Element
@@ -71,7 +75,73 @@ function collage(width, height, forms) {
 
 // Element -> { x: Number, y: Number } -> Form
 function toForm(elem, pos) {
-    return new Form(0, 1, pos, elem)
+    return new Form(0, 1, pos, new FormElement(elem))
+}
+
+// Int -> Int -> { x: Number, y: Number} -> Shape
+function rect(width, height, pos) {
+    return new Shape([{
+        x: 0 - width / 2
+        , y: 0 - height / 2
+    }, {
+        x: 0 - width / 2
+        , y: height / 2
+    }, {
+        x: width / 2
+        , y: height / 2
+    }, {
+        x: width / 2
+        , y: 0 - height / 2
+    }], pos)
+}
+
+// { r: Number, g: Number, b: Number, a: Number }
+function filled(colour, shape) {
+    return new Form(0, 1, shape.position
+        , new FormShape("filled", colour, shape))
+}
+
+// String -> [Element] -> Element
+function flow(direction, elements) {
+    var widths = elements.map(widthOf)
+    var heights = elements.map(heightOf)
+
+    var width = direction === "left" ?
+        sum(widths) : direction === "right" ?
+        sum(widths) : maximum(widths)
+    var height = direction === "down" ?
+        sum(heights) : direction === "right" ?
+        sum(heights) : maximum(heights)
+
+    return new Element(guid(), new FlowElement(direction, elements)
+        , width, height)
+}
+
+function widthOf(elem) {
+    return elem.width
+}
+
+function heightOf(elem) {
+    return elem.height
+}
+
+function sum(list) {
+    var total = 0
+    for (var i = 0; i < list.length; i++) {
+        total += list[i]
+    }
+    return total
+}
+
+function maximum(list) {
+    var max = 0
+    for (var i = 0; i < list.length; i++) {
+        var item = list[i]
+        if (item > max) {
+            max = item
+        }
+    }
+    return max
 }
 
 function Element(id, basicElement, width, height, opacity, color, link) {
@@ -180,7 +250,7 @@ ContainerElement.prototype.type = "ContainerElement"
 
 ContainerElement.prototype.create = function _ContainerElement_create() {
     var child = this.elem.create()
-    setPos(this.position, child)
+    setPosition(this.position, child)
     var div = document.createElement("div")
     div.style.position = "relative"
     div.style.overflow = "hidden"
@@ -191,13 +261,39 @@ ContainerElement.prototype.create = function _ContainerElement_create() {
 ContainerElement.prototype.update =
     function _ContainerElement_update(elem, previous) {
         this.elem.update(elem.firstChild, previous.elem)
-        setPos(this.position, elem.firstChild)
+        setPosition(this.position, elem.firstChild)
     }
 
 function CollageElement(forms, width, height) {
+    var formGroups = []
+    var group = []
+
+    for (var i = 0; i < forms.length; i++) {
+        var form = forms[i]
+
+        if (form.type === "FormElement") {
+            if (group.length > 0) {
+                formGroups.push(group)
+                group = []
+            }
+
+            formGroups.push(form)
+        } else {
+            group.push(form)
+        }
+    }
+
+    if (group.length > 0) {
+        formGroups.push(group)
+    }
+
     this.width = width
     this.height = height
-    this.forms = forms
+    this.formGroups = formGroups
+}
+
+CollageElement.prototype.create = function _ContainerElement_create() {
+
 }
 
 function Form(theta, scale, position, basicForm) {
@@ -207,26 +303,86 @@ function Form(theta, scale, position, basicForm) {
     this.basicForm = basicForm
 }
 
+function Shape(lines, position) {
+    this.lines = lines
+    this.position = position
+}
 
-function setPos(pos, elem) {
-    elem.style.position = 'absolute';
-    elem.style.margin = 'auto';
-    if (pos.type === "Position") {
-        if (pos.vertical !== "Top") {
-            elem.style.top = 0
-        }
-        if (pos.vertical !== "Bottom") {
-            elem.style.bottom = 0
+function FormShape(shapeStyle, colour, shape) {
+    this.shapeStyle = shapeStyle
+    this.colour = colour
+    this.shape = shape
+}
+
+function FormElement(elem) {
+    this.element = elem
+}
+
+FormElement.prototype.type = "FormElement"
+
+function FlowElement(direction, elements) {
+    this.direction = direction
+    this.elements = elements
+}
+
+FlowElement.prototype.type = "FlowElement"
+
+FlowElement.prototype.create = function _FlowElement_create() {
+    var elements = this.elements
+    if (this.direction === "down" ||
+        this.direction === "right" ||
+        this.direction === "outward"
+    ) {
+        elements = elements.slice().reverse()
+    }
+
+    var container = document.createElement("div")
+
+    for (var i = elements.length; i--;) {
+        var element = elements[i]
+        var domElement = element.create()
+
+        if (this.direction === "right" || this.direction === "left") {
+            domElement.style.styleFloat = "left"
+            domElement.style.cssFloat = "left"
+        } else if (this.direction === "inward" ||
+            this.direction === "outward"
+        ) {
+            domElement.style.position = "absolute"
         }
 
-        if (pos.horizontal !== "Left") {
-            elem.style.left = 0
-        }
-        if (pos.horizontal !== "Right") {
-            elem.style.right = 0
-        }
-        if (pos.horizontal === "Mid") {
-            elem.style.textAlign = "center"
+        container.appendChild(domElement)
+    }
+
+    return container
+}
+
+FlowElement.prototype.update = function _FlowElement_update(elem, previous) {
+    var parentElem = elem.parentNode
+    if (this.direction !== previous.direction) {
+        return parentElem.replaceChild(this.create(), elem)
+    }
+
+    var nextElements = this.elements
+    var childNodes = elem.childNodes
+
+    if (childNodes.length !== nextElements.length) {
+        return parentElem.replaceChild(this.create(), elem)
+    }
+
+    var previousElements = previous.elements
+
+    for (var i = childNodes.length; i--;) {
+        nextElements[i].update(childNodes[i], previousElements[i])
+        var domElement = childNodes[i]
+
+        if (this.direction === "right" || this.direction === "left") {
+            domElement.style.styleFloat = "left"
+            domElement.style.cssFloat = "left"
+        } else if (this.direction === "inward" ||
+            this.direction === "outward"
+        ) {
+            domElement.style.position = "absolute"
         }
     }
 }

@@ -3,7 +3,11 @@ var map = require("../../signal/map")
 var MousePosition = require("../../input").MousePosition
 var render = require("../../render")
 
-var edgeLength = map(MousePosition(), function (pos) {
+var input = MousePosition()
+input
+// =>
+
+var edgeLength = map(input, function (pos) {
     return Math.max(100, Math.max(pos.x, pos.y))
 })
 edgeLength // application state
