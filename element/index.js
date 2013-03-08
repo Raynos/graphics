@@ -11,6 +11,8 @@ pooledDiv.style.styleFloat = "left"
 pooledDiv.style.cssFloat = "left"
 document.body.appendChild(pooledDiv)
 
+var MATH_PI = Math.PI
+
 module.exports = {
     plainText: plainText
     , image: image
@@ -268,7 +270,7 @@ function CollageElement(forms, width, height) {
     var formGroups = []
     var group = []
 
-    for (var i = 0; i < forms.length; i++) {
+    for (var i = forms.length; i--; ) {
         var form = forms[i]
 
         if (form.type === "FormElement") {
@@ -293,8 +295,93 @@ function CollageElement(forms, width, height) {
 }
 
 CollageElement.prototype.create = function _ContainerElement_create() {
+    console.log("CollageElement.create")
+    var formGroups = this.formGroups
+    var width = this.width
+    var height = this.height
 
+    if (formGroups.length === 0) {
+        return createCollageForForms(width, height, [])
+    }
+
+    var elems = []
+
+    for (var i = formGroups.length; i--; ) {
+        var group = formGroups[i]
+
+        if (!Array.isArray(group)) {
+            elems[i] = createCollageForElements(width, height, group)
+        } else {
+            console.log("CREATE COLLAGE FOR FORMS", formGroups)
+            elems[i] = createCollageForForms(width, height, group)
+        }
+    }
+
+    if (elems.length === 1) {
+        return elems[0]
+    }
+
+    return flow("inward", elems)
 }
+
+CollageElement.prototype.update = function () {
+    /* TODO IMPLEMENT */
+}
+
+function createCollageForForms(width, height, forms) {
+    var canvas = document.createElement("canvas")
+    width = ~~width
+    height = ~~height
+    canvas.style.width = width + "px"
+    canvas.style.height = height + "px"
+    canvas.style.display = "block"
+    canvas.width = width
+    canvas.height = height
+
+    if (canvas.getContext) {
+        var context = canvas.getContext("2d")
+
+        context.clearRect(0, 0, width, height)
+
+        for (var i = forms.length; i--; ) {
+            var form = forms[i]
+            context.save()
+            var x = form.position.x
+            var y = form.position.y
+
+            if (x !== 0 || y !== 0) {
+                context.translate(x, y)
+            }
+
+            var theta = form.theta
+
+            if (theta !== ~~theta) {
+                context.rotate(2 * MATH_PI * theta)
+            }
+
+            var scale = form.scale
+
+            if (scale !== 1) {
+                context.scale(scale, scale)
+            }
+
+            context.beginPath()
+
+            var basicForm = form.basicForm
+            console.log("Calling create", forms)
+            basicForm.create(context)
+
+            context.restore()
+        }
+
+        return canvas
+    }
+
+    canvas.textContent = "Your browser does not support the canvas element."
+    return canvas
+}
+
+function createCollageForElements() {}
 
 function Form(theta, scale, position, basicForm) {
     this.theta = theta
@@ -303,8 +390,8 @@ function Form(theta, scale, position, basicForm) {
     this.basicForm = basicForm
 }
 
-function Shape(lines, position) {
-    this.lines = lines
+function Shape(points, position) {
+    this.points = points
     this.position = position
 }
 
@@ -312,6 +399,44 @@ function FormShape(shapeStyle, colour, shape) {
     this.shapeStyle = shapeStyle
     this.colour = colour
     this.shape = shape
+}
+
+FormShape.prototype.type = "FormShape"
+
+FormShape.prototype.create = function _FormShape_create(context) {
+    var shapeStyle = this.shapeStyle
+    var shape = this.shape
+
+    if (shapeStyle === "filled") {
+        tracePoints(context, shape.points)
+        console.log("fillStyle?", extractColour(this.colour))
+        context.fillStyle = extractColour(this.colour)
+        context.fill()
+    }
+}
+
+function extractColour(colour) {
+    // console.log("colour?", colour)
+
+    // if (colour.a === undefined || colour.a === 1) {
+    //     return "rgb(" + colour.r + "," + colour.g + "," + colour.b + ")"
+    // }
+
+    return "rgba(" + colour.r + "," + colour.g +
+        "," + colour.b + "," + (colour.a || 1) + ")"
+}
+
+function tracePoints(context, points) {
+    var i = points.length - 1
+    if ( i <= 0) {
+        return
+    }
+
+    context.moveTo(points[i].x, points[i].y)
+
+    while (i--) {
+        context.lineTo(points[i].x, points[i].y)
+    }
 }
 
 function FormElement(elem) {

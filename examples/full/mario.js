@@ -29,6 +29,8 @@ var MarioModel = {
 
 /* Inputs */
 var dimensions = WindowDimensions()
+dimensions
+// =>
 var arrows = KeyboardArrows()
 var framerate = fps(25)
 
@@ -96,29 +98,39 @@ marioState
 var main = mapMany([
     dimensions, marioState
 ], function display(dimensions, mario) {
-    var src = "/imgs/mario/stand/right.gif"
+    // var src = "/imgs/mario/stand/right.gif"
 
-    var w = dimensions.w
-    var h = dimensions.h
-    var verb = mario.y > 0 ? "jump" :
-        mario.xVelocity !== 0 ? "walk" : "stand"
-    var direction = mario.xVelocity < 0 ? "left" : "rigth"
+    var w = dimensions.width / 2
+    var h = dimensions.height / 2
+    // var verb = mario.y > 0 ? "jump" :
+    //     mario.xVelocity !== 0 ? "walk" : "stand"
+    // var direction = mario.xVelocity < 0 ? "left" : "rigth"
 
-    var src = "/imgs/mario/" + verb + "/" + direction + ".gif"
+    // var src = "/imgs/mario/" + verb + "/" + direction + ".gif"
 
-    var largeRect = rect(h, { x: w / 2, y: h / 2 })
-    var smallRect = rect(50, { x: w / 2, y: 25 })
-    var sky = filled(largeRect, skyblue)
-    var grass = filled(smallRect, grassgreen)
-    var marioImage = image(35, 35, src)
-
-    var marioForm = toForm(marioImage, {
-        x: mario.x
-        , y: (h - 63) - mario.y
+    var largeRect = rect(w, h, {
+        x: w / 2
+        , y: h / 2
     })
+    var smallRect = rect(w, 50, {
+        x: w / 2
+        , y: (h - 25)
+    })
+    var sky = filled(skyblue, largeRect)
+    var grass = filled(grassgreen, smallRect)
+    // var marioImage = image(35, 35, src)
 
-    return collage(w, h, [sky, grass, marioForm])
+    // var marioForm = toForm(marioImage, {
+    //     x: mario.x
+    //     , y: (h - 63) - mario.y
+    // })
+
+    return collage(w, h, [
+        sky
+        , grass
+        // , marioForm
+    ])
 })
 
-// render(main)
+render(main, false)
 // =>

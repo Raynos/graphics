@@ -12,8 +12,13 @@ function render(scenes, container) {
 
     var surface = document.createElement("div")
 
+    console.log("------------------------")
+    console.log("RENDER CALLED TWICE LAWL")
+    console.log("------------------------")
+
     var main = foldp(scenes, function (previous, current) {
         if (previous === null) {
+            console.log("previos null thus create")
             var elem = current.create()
             surface.appendChild(elem)
         } else {
