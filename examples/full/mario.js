@@ -131,6 +131,8 @@ var main = mapMany([
         // , marioForm
     ])
 })
+main
+// =>
 
 render(main, false)
 // =>
