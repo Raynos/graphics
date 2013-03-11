@@ -416,12 +416,6 @@ FormShape.prototype.create = function _FormShape_create(context) {
 }
 
 function extractColour(colour) {
-    // console.log("colour?", colour)
-
-    // if (colour.a === undefined || colour.a === 1) {
-    //     return "rgb(" + colour.r + "," + colour.g + "," + colour.b + ")"
-    // }
-
     return "rgba(" + colour.r + "," + colour.g +
         "," + colour.b + "," + (colour.a || 1) + ")"
 }

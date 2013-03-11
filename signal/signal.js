@@ -3,12 +3,12 @@ var setTimeout = require("timers").setTimeout
 module.exports = signal
 
 // ((A -> void) -> void) -> A -> Signal A
-function signal(callback, defaultValue) {
+function signal(generator, defaultValue) {
     var value = defaultValue
     var listeners = []
 
     setTimeout(function () {
-        callback(set)
+        generator(set)
     }, 0)
 
     return observable
