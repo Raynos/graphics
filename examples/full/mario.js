@@ -46,6 +46,7 @@ function gravity(mario, delta) {
         , xVelocity: mario.xVelocity
         , xPosition: mario.xPosition
         , yPosition: mario.yPosition
+        , direction: mario.direction
     }
 }
 
@@ -56,6 +57,7 @@ function jump(mario, arrows) {
             , xVelocity: mario.xVelocity
             , xPosition: mario.xPosition
             , yPosition: mario.yPosition
+            , direction: mario.direction
         }
     } else {
         return mario
@@ -68,6 +70,8 @@ function walk(mario, arrows) {
         , yVelocity: mario.yVelocity
         , xPosition: mario.xPosition
         , yPosition: mario.yPosition
+        , direction: arrows.x < 0 ?
+            "left" : arrows.x > 0 ? "right" : mario.direction
     }
 }
 
@@ -77,6 +81,7 @@ function move(mario, delta) {
         , yPosition: Math.max(0, mario.yPosition + delta * mario.yVelocity)
         , xVelocity: mario.xVelocity
         , yVelocity: mario.yVelocity
+        , direction: mario.direction
     }
 }
 
@@ -97,15 +102,16 @@ inspect(marioState) // =>
 var main = transformMany([
     dimensions, marioState
 ], function display(dimensions, mario) {
-    // var src = "/imgs/mario/stand/right.gif"
+    // console.log("mario?", mario)
 
     var w = dimensions.width / 2
     var h = dimensions.height / 2
-    // var verb = mario.y > 0 ? "jump" :
-    //     mario.xVelocity !== 0 ? "walk" : "stand"
-    // var direction = mario.xVelocity < 0 ? "left" : "rigth"
+    var verb = mario.y > 0 ? "jump" :
+        mario.xVelocity !== 0 ? "walk" : "stand"
+    var direction = mario.direction
 
-    // var src = "/imgs/mario/" + verb + "/" + direction + ".gif"
+    var src = "http://elm-lang.org/imgs/mario/" +
+        verb + "/" + direction + ".gif"
 
     var largeRect = rect(w, h, {
         x: w / 2
@@ -117,20 +123,20 @@ var main = transformMany([
     })
     var sky = filled(skyblue, largeRect)
     var grass = filled(grassgreen, smallRect)
-    // var marioImage = image(35, 35, src)
+    var marioImage = image(35, 35, src)
 
-    // var marioForm = toForm(marioImage, {
-    //     x: mario.x
-    //     , y: (h - 63) - mario.y
-    // })
+    var marioForm = toForm(marioImage, {
+        x: mario.xPosition
+        , y: (h - 63) - mario.yPosition
+    })
 
     return collage(w, h, [
         sky
         , grass
-        // , marioForm
+        , marioForm
     ])
 })
-inspect(main) // =>
+// inspect(main) // =>
 
 render(main, false)
 // =>

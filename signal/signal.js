@@ -26,11 +26,10 @@ function signal(generator, defaultValue) {
     function set(v) {
         value = v
 
-        listeners.forEach(send)
-    }
-
-    function send(listener) {
-        listener(value)
+        for (var i = 0; i < listeners.length; i++) {
+            var listener = listeners[i]
+            listener(value)
+        }
     }
 }
 
