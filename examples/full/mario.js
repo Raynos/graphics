@@ -1,3 +1,16 @@
+var document = require("global/document")
+
+var githubLink = document.createElement("a")
+githubLink.href = "http://github.com/Raynos/graphics"
+githubLink.textContent = "Source code"
+
+var elmLink = document.createElement("a")
+elmLink.href = "http://elm-lang.org/"
+elmLink.textContent = "This is an Elm demo ported to JavaScript"
+
+githubLink // =>
+elmLink // =>
+
 var extend = require("xtend")
 
 var render = require("../../render")
