@@ -1,5 +1,3 @@
-var observable = require("observable")
-
 // Signal A -> (B -> A -> B) -> B -> Signal B
 module.exports = foldp
 
