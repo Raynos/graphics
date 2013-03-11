@@ -25,7 +25,8 @@
     "browserify-server": "~2.1.18",
     "browservefy": "git://github.com/Raynos/browservefy",
     "testem": "~0.2.56",
-    "tryme": "git://github.com/Raynos/tryme"
+    "tryme": "git://github.com/Raynos/tryme",
+    "xtend": "~2.0.3"
   },
   "peerDependencies": {},
   "licenses": [
