@@ -4,8 +4,6 @@ var rect = require("../../element").rect
 
 var render = require("../../render")
 
-
-
 var myBlue  = { r: 0, g: 85, b: 170 }
 var myGreen = { r: 28, g: 267, b: 85, a: 1 / 2 }
 

@@ -2,9 +2,10 @@ var WindowDimensions = require("../../input").WindowDimensions
 var KeyboardArrows = require("../../input").KeyboardArrows
 var fps = require("../../input").fps
 
-var map = require("../../signal").map
-var mapMany = require("../../signal").mapMany
+var transform = require("../../signal").transform
+var transformMany = require("../../signal").transformMany
 var foldp = require("../../signal").foldp
+var inspect = require("../../signal").inspect
 
 var rect = require("../../element").rect
 var filled = require("../../element").filled
@@ -29,16 +30,15 @@ var MarioModel = {
 
 /* Inputs */
 var dimensions = WindowDimensions()
-dimensions
-// =>
+inspect(dimensions) // =>
+
 var arrows = KeyboardArrows()
 var framerate = fps(25)
 
-var input = mapMany([framerate, arrows], function toTuple(delta, arrows) {
+var input = transformMany([framerate, arrows], function toTuple(delta, arrows) {
     return { delta: delta, arrows: arrows }
 })
-input
-// =>
+inspect(input) // =>
 
 function gravity(mario, delta) {
     return {
@@ -91,11 +91,10 @@ var marioState = foldp(input, function update(mario, inputState) {
 
     return move(walkedMario, delta)
 }, MarioModel)
-marioState
-// =>
+inspect(marioState) // =>
 
 /* rendering */
-var main = mapMany([
+var main = transformMany([
     dimensions, marioState
 ], function display(dimensions, mario) {
     // var src = "/imgs/mario/stand/right.gif"
@@ -131,8 +130,7 @@ var main = mapMany([
         // , marioForm
     ])
 })
-main
-// =>
+inspect(main) // =>
 
 render(main, false)
 // =>

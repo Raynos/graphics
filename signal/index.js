@@ -1,5 +1,6 @@
 module.exports = {
-    map: require("./map")
+    transform: require("./transform")
     , foldp: require("./foldp")
-    , mapMany: require("./mapMany")
+    , transformMany: require("./transformMany")
+    , inspect: require("./inspect")
 }

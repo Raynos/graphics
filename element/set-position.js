@@ -1,4 +1,4 @@
-module.export = setPosition
+module.exports = setPosition
 
 function setPosition(pos, elem) {
     elem.style.position = 'absolute';

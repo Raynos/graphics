@@ -17,22 +17,17 @@
     "email": "raynos2@gmail.com"
   },
   "dependencies": {
-    "reducers": "git://github.com/Raynos/reducers",
     "global": "~2.0.1",
-    "invoker": "~0.1.2",
-    "tryme": "git://github.com/Raynos/tryme"
+    "observable": "~1.4.1"
   },
   "devDependencies": {
     "tape": "~0.2.2",
     "browserify-server": "~2.1.18",
     "browservefy": "git://github.com/Raynos/browservefy",
     "testem": "~0.2.56",
-    "reducible": "git://github.com/Raynos/reducible#1.x",
     "tryme": "git://github.com/Raynos/tryme"
   },
-  "peerDependencies": {
-    "reducible": "git://github.com/Raynos/reducible#1.x"
-  },
+  "peerDependencies": {},
   "licenses": [
     {
       "type": "MIT",

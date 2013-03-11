@@ -1,8 +1,9 @@
 var middle = require("../../element").middle
 var plainText = require("../../element").plainText
 var container = require("../../element").container
+
 var WindowDimensions = require("../../input").WindowDimensions
-var map = require("../../signal/map")
+var transform = require("../../signal").transform
 var render = require("../../render")
 
 function scene(dimensions) {
@@ -14,7 +15,7 @@ function scene(dimensions) {
 }
 
 
-var main = map(WindowDimensions(), scene)
+var main = transform(WindowDimensions(), scene)
 
 render(main, false)
 // =>

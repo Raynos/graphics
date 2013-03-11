@@ -1,21 +1,21 @@
 var image = require("../../element").image
-var map = require("../../signal/map")
+var transform = require("../../signal").transform
+var inspect = require("../../signal").inspect
 var MousePosition = require("../../input").MousePosition
 var render = require("../../render")
 
 var input = MousePosition()
-input
-// =>
+inspect(input) // =>
 
-var edgeLength = map(input, function (pos) {
+// application state
+var edgeLength = transform(input, function (pos) {
     return Math.max(100, Math.max(pos.x, pos.y))
 })
-edgeLength // application state
-// =>
+inspect(edgeLength) // =>
 
-var main = map(edgeLength, function resizableYogi(edgeLength) {
+// application view
+var main = transform(edgeLength, function resizableYogi(edgeLength) {
     return image(edgeLength, edgeLength, "http://elm-lang.org/yogi.jpg")
-}) // application view
+})
 
-render(main, false)
-// =>
+render(main, false) // =>

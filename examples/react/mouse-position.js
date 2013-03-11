@@ -1,9 +1,9 @@
 var MousePosition = require("../../input").MousePosition
-var map = require("../../signal/map")
+var transform = require("../../signal").transform
 var plainText = require("../../element").plainText
 var render = require("../../render")
 
-var main = map(MousePosition(), function (position) {
+var main = transform(MousePosition(), function (position) {
     return plainText(position)
 })
 

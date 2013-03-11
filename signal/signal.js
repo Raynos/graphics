@@ -1,16 +1,38 @@
-var reducible = require("reducible/reducible")
-var invoker = require("invoker")
+var setTimeout = require("timers").setTimeout
 
 module.exports = signal
 
+// ((A -> void) -> void) -> A -> Signal A
 function signal(callback, defaultValue) {
-    return reducible(function (next, initial) {
-        var invoke = invoker(next, initial)
+    var value = defaultValue
+    var listeners = []
 
-        if (defaultValue !== undefined) {
-            invoke(defaultValue)
+    setTimeout(function () {
+        callback(set)
+    }, 0)
+
+    return observable
+
+    function observable(listener) {
+        if (isGet(listener)) {
+            return value
+        } else if (isSet(listener)) {
+            throw new Error("read-only")
+        } else {
+            listeners.push(listener)
         }
+    }
 
-        callback(invoke)
-    })
+    function set(v) {
+        value = v
+
+        listeners.forEach(send)
+    }
+
+    function send(listener) {
+        listener(value)
+    }
 }
+
+function isGet(x) { return x === undefined }
+function isSet(x) { return typeof x !== "function" }
