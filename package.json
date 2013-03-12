@@ -18,7 +18,8 @@
   },
   "dependencies": {
     "global": "~2.0.1",
-    "observable": "~1.4.1"
+    "observable": "~1.4.1",
+    "uuid": "~1.4.0"
   },
   "devDependencies": {
     "tape": "~0.2.2",
