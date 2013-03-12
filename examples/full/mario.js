@@ -207,6 +207,7 @@ var main = transformMany([
 
     return collage(w, h, [ sky, grass, marioForm ])
 })
+// inspect(main) // =>
 
 /* Finally we start the entire rendering engine by passing a
     Signal representation of our scene to render which will

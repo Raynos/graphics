@@ -2,6 +2,8 @@ var collage = require("../../element").collage
 var filled = require("../../element").filled
 var rect = require("../../element").rect
 
+var inspect = require("../../signal").inspect
+
 var observable = require("observable")
 
 var myBlue  = { r: 0, g: 85, b: 170 }
@@ -22,7 +24,7 @@ var scene = collage(300, 300, [ blueRect, greenRect ])
 // With graphics you want to use `graphics/element` to
 // create instances of `Element`
 // These are just data structures
-scene
+inspect(scene, "jsonview")
 // =>
 
 // To render Element's you should call .create() on them
