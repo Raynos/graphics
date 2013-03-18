@@ -10,6 +10,7 @@ module.exports = {
     , rect: require("./rect")
     , filled: require("./filled")
     , flow: require("./flow")
+    , h: require("./html-element")
     // Data structures. This one is used in container
     , middle: {
         horizontal: "Mid"

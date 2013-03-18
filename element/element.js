@@ -18,8 +18,12 @@ Element.prototype.create = function _Element_create() {
     var basicElement = this.basicElement
     var elem = basicElement.create()
     elem.id = this.id
-    elem.style.width = (~~this.width) + "px"
-    elem.style.height = (~~this.height) + "px"
+    if (this.width !== -1) {
+        elem.style.width = (~~this.width) + "px"
+    }
+    if (this.height !== -1) {
+        elem.style.height = (~~this.height) + "px"
+    }
     return elem
 }
 
@@ -28,11 +32,11 @@ Element.prototype.update = function _Element_update(elem, previous) {
     var currentBasicElement = this.basicElement
     var parentElem = elem.parentNode
 
-    if (previous.width !== this.width) {
+    if (previous.width !== this.width && this.width !== -1) {
         elem.style.width = (~~this.width) + "px"
     }
 
-    if (previous.height !== this.height) {
+    if (previous.height !== this.height && this.height !== -1) {
         elem.style.height = (~~this.height) + "px"
     }
 

@@ -19,7 +19,10 @@
   "dependencies": {
     "global": "~2.0.1",
     "observable": "~1.4.1",
-    "uuid": "~1.4.0"
+    "uuid": "~1.4.1",
+    "data-set": "~0.1.2",
+    "class-list": "0.0.1",
+    "xtend": "~2.0.3"
   },
   "devDependencies": {
     "tape": "~0.2.2",
@@ -27,7 +30,8 @@
     "browservefy": "git://github.com/Raynos/browservefy",
     "testem": "~0.2.56",
     "tryme": "git://github.com/Raynos/tryme",
-    "xtend": "~2.0.3"
+    "xtend": "~2.0.3",
+    "uuid": "~1.4.1"
   },
   "peerDependencies": {},
   "licenses": [

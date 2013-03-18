@@ -7,7 +7,7 @@ module.exports = MouseClicks
 // Signal {}
 function MouseClicks() {
     return signal(function (next) {
-        document.addEventListener("click", function () {
+        document.addEventListener("click", function (ev) {
             next({})
         })
     })

@@ -4,4 +4,5 @@ module.exports = {
     , WindowDimensions: require("./window-dimensions")
     , fps: require("./fps")
     , KeyboardArrows: require("./keyboard-arrows")
+    , InputPool: require("./input-pool")
 }
