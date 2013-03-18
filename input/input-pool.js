@@ -27,11 +27,7 @@ function InputPool(name) {
         signal: signal(function (next) {
             handleSubmit(next)
         })
-        , input: function (elem, eventType, transform) {
-            if (eventType === "submit") {
-                return withSubmit(elem, transform)
-            }
-        }
+        , submit: withSubmit
     }
 
     function handleSubmit(next) {

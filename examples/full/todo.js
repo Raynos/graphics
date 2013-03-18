@@ -61,7 +61,7 @@ function mainSection(todos) {
         , autofocus: true
     })
 
-    newTodoInput = newTodoPool.input(newTodoInput, "submit", function (value) {
+    newTodoInput = newTodoPool.submit(newTodoInput, function (value) {
         return { id: uuid(), title: value, completed: false }
     })
 
