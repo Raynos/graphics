@@ -17,7 +17,9 @@ Element.prototype.type = "Element"
 Element.prototype.create = function _Element_create() {
     var basicElement = this.basicElement
     var elem = basicElement.create()
-    elem.id = this.id
+    if (!elem.id) {
+        elem.id = this.id
+    }
     if (this.width !== -1) {
         elem.style.width = (~~this.width) + "px"
     }

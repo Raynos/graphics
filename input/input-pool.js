@@ -20,44 +20,29 @@ function InputPool(name) {
     var nameSection = name + "~"
     var nameSectionLen = nameSection.length
     var fns = {
-        submit: {}
+        submit: {},
+        change: {}
     }
 
     return {
         signal: signal(function (next) {
             handleSubmit(next)
-        })
-        , submit: withSubmit
+            handleChange(next)
+        }),
+        submit: withType("submit"),
+        change: withType("change")
     }
 
     function handleSubmit(next) {
         document.addEventListener("keypress", function (ev) {
             var target = ev.target
-            var ds = DataSet(target)
-            var id = ds.graphicsId
+            var fn = getTransform("submit", target)
+            var value = target.value && target.value.trim()
 
-            if (!id || id.indexOf(nameSection) !== 0) {
-                return
-            }
+            var validEvent = fn && target.type === "text" &&
+                ev.keyCode === ENTER && !ev.shiftKey && value !== ""
 
-            if (target.type !== "text") {
-                return
-            }
-
-            if (ev.keyCode !== ENTER || ev.shiftKey) {
-                return
-            }
-
-            var value = target.value.trim()
-
-            if (value === "") {
-                return
-            }
-
-            var itemId = id.substr(nameSectionLen)
-            var fn = fns.submit[itemId]
-
-            if (!fn) {
+            if (!validEvent) {
                 return
             }
 
@@ -67,27 +52,69 @@ function InputPool(name) {
         })
     }
 
-    function withSubmit(elem, transform) {
-        var basicElement = elem.basicElement
-        var specialProperties = basicElement.specialProperties
-        var dataset = specialProperties.dataset
-        var id = uuid()
+    function handleChange(next) {
+        document.addEventListener("keypress", function (ev) {
+            var target = ev.target
+            var fn = getTransform("change", target)
 
-        fns.submit[id] = transform
+            if (!fn || target.type !== "text") {
+                return
+            }
 
-        specialProperties = extend(specialProperties, {
-            dataset: extend(dataset,  {
-                graphicsId:  nameSection + id
-            })
+            var item = fn(target.value)
+            next(item)
         })
 
-        elem = new HtmlElement(
-            basicElement.tagName,
-            specialProperties,
-            basicElement.generalProperties,
-            basicElement.children
-        )
+        document.addEventListener("change", function (ev) {
+            var target = ev.target
+            var fn = getTransform("change", target)
 
-        return new Element(elem, -1, -1)
+            if (!fn || target.type !== "checkbox") {
+                return
+            }
+
+            var item = fn(target.checked)
+            next(item)
+        })
+    }
+
+    function getTransform(type, target) {
+        var ds = DataSet(target)
+        var id = ds.graphicsId
+
+        if (!id || id.indexOf(nameSection) !== 0) {
+            return null
+        }
+
+        var itemId = id.substr(nameSectionLen) || null
+        var fn = fns[type][itemId]
+
+        return fn || null
+    }
+
+    function withType(type) {
+        return function (elem, transform)  {
+            var basicElement = elem.basicElement
+            var specialProperties = basicElement.specialProperties
+            var dataset = specialProperties.dataset
+            var id = uuid()
+
+            fns[type][id] = transform
+
+            specialProperties = extend(specialProperties, {
+                dataset: extend(dataset,  {
+                    graphicsId:  nameSection + id
+                })
+            })
+
+            elem = new HtmlElement(
+                basicElement.tagName,
+                specialProperties,
+                basicElement.generalProperties,
+                basicElement.children
+            )
+
+            return new Element(elem, -1, -1)
+        }
     }
 }

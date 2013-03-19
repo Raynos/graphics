@@ -7,6 +7,22 @@ var Element = require("./element")
 
 var splitSelectorRegex = /([\.#]?[a-zA-Z0-9_-]+)/
 
+function TextElement(text) {
+    this.text = text
+}
+
+TextElement.prototype.type = "TextElement"
+
+TextElement.prototype.create = function _TextElement_create() {
+    return document.createTextNode(this.text)
+}
+
+TextElement.prototype.update = function _TextElement_update(elem, previous) {
+    if (this.text !== previous.text) {
+        elem.value = this.text
+    }
+}
+
 /* a HtmlElement has a tagName, a hash of special attributes and a hash
     of general attributes.
 
@@ -140,7 +156,7 @@ function h(selector, attributes, children) {
         var child = children[k]
 
         if (typeof child === "string") {
-            children[k] = h("span", { textContent: child })
+            children[k] = new TextElement(child)
         }
     }
 
