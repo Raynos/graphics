@@ -140,7 +140,7 @@ function todoItem(todo) {
     // TODO: wire up destroy
     // TODO: wire up double click UI bullshit
     // TODO: wire up editing blur / etc.
-    return h("li", [
+    return h("li" + (todo.completed ? ".completed" : ""), [
         h("div.view", [
             todoToggle,
             h("label", todo.title),
