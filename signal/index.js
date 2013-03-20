@@ -4,5 +4,5 @@ module.exports = {
     , transformMany: require("./transform-many")
     , inspect: require("./inspect")
     , sampleOn: require("./sampleOn")
-    , combineEvents: require("./combine-events")
+    , mergeAll: require("./merge-all")
 }

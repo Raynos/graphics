@@ -74,6 +74,13 @@ HtmlElement.prototype.create = function _HtmlElement_create() {
         ds[datasetKey] = datasetAttr
     }
 
+    // Many hacks :(
+    if (specialProperties.focus) {
+        process.nextTick(function () {
+            elem.focus()
+        })
+    }
+
     var children = this.children
 
     for (var l = 0; l < children.length; l++) {
@@ -134,6 +141,8 @@ function h(selector, attributes, children) {
         if (key.indexOf("data-") === 0) {
             var attr = key.substr(5)
             dataset[attr] = attribute
+        } else if (key === "focus") {
+            special.focus = attribute
         } else {
             general[key] = attribute
         }

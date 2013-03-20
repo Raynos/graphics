@@ -1,7 +1,7 @@
 // Hash<key, Signal<T>> -> Signal Hash<key, T>
-module.exports = combineEvents
+module.exports = mergeAll
 
-function combineEvents(signals) {
+function mergeAll(signals) {
     var listeners = []
     var started = false
 

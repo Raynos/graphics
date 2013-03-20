@@ -6,41 +6,42 @@ var Signal = require("../../signal")
 var Input = require("../../input")
 var Element = require("../../element")
 
-var InputPool = Input.InputPool
-
+var EventPool = Input.EventPool
 var inspect = Signal.inspect
 var transform = Signal.transform
-var combineEvents = Signal.combineEvents
+var mergeAll = Signal.mergeAll
 var foldp = Signal.foldp
-
 var h = Element.h
 
 // Application Model
-var TodoModel = {
-    id: "",
-    title: "",
-    completed: false
-}
-
-var TodosModel = {
-    todos: []
-}
+var TodoModel = { id: "", title: "", completed: false }
+var TodosModel = { todos: [] }
 
 // Inputs
-var newTodoPool = InputPool("new-todo")
-var toggleAllPool = InputPool("toggle-all")
-var todoTogglePool = InputPool("todo-toggle")
+var newTodoPool = EventPool("new-todo")
+var toggleAllPool = EventPool("toggle-all")
+var todoTogglePool = EventPool("todo-toggle")
+var destroyTodoPool = EventPool("destroy-todo")
+var editingTodoPool = EventPool("editing-todo")
+var editTodoPool = EventPool("edit-todo")
 
-var input = combineEvents({
+var input = mergeAll({
     newTodo: newTodoPool.signal,
     toggleAll: toggleAllPool.signal,
-    todoToggle: todoTogglePool.signal
+    todoToggle: todoTogglePool.signal,
+    destroyTodo: destroyTodoPool.signal,
+    editingTodo: editingTodoPool.signal,
+    editTodo: editTodoPool.signal
 })
 inspect(input) // =>
 
 // State operations
-function addTodo(state, newTodo) {
-    return { todos: state.todos.concat(newTodo) }
+function newTodo(state, todo) {
+    if (todo.title === "") {
+        return state
+    }
+
+    return { todos: state.todos.concat(todo) }
 }
 
 function toggleAll(state, toggled) {
@@ -59,23 +60,55 @@ function todoToggle(state, change) {
     }) }
 }
 
+function destroyTodo(state, change) {
+    return { todos: state.todos.filter(function (todo) {
+        return todo.id !== change.id
+    }) }
+}
+
+function editingTodo(state, change) {
+    return { todos: state.todos.map(function (todo) {
+        if (change.id !== todo.id) {
+            return extend(todo, { editing: false })
+        } else {
+            return extend(todo, { editing: true })
+        }
+    }) }
+}
+
+function editTodo(state, change) {
+    return { todos: state.todos.reduce(function (todos, todo) {
+        if (change.id !== todo.id)  {
+            return todos.concat(todo)
+        }
+
+        if (change.title === "") {
+            return todos
+        } else {
+            return todos.concat(extend(todo, {
+                editing: false, title: change.title
+            }))
+        }
+    }, []) }
+}
+
 // Updating the current state
 var todosState = foldp(input, function update(state, inputState) {
-    var newState = state
-
     if ("newTodo" in inputState) {
-        newState = addTodo(newState, inputState.newTodo)
+        state = newTodo(state, inputState.newTodo)
+    } else if ("toggleAll" in inputState) {
+        state = toggleAll(state, inputState.toggleAll)
+    } else if ("todoToggle" in inputState) {
+        state = todoToggle(state, inputState.todoToggle)
+    } else if ("destroyTodo" in inputState) {
+        state = destroyTodo(state, inputState.destroyTodo)
+    } else if ("editingTodo" in inputState) {
+        state = editingTodo(state, inputState.editingTodo)
+    } else if ("editTodo" in inputState) {
+        state = editTodo(state, inputState.editTodo)
     }
 
-    if ("toggleAll" in inputState) {
-        newState = toggleAll(newState, inputState.toggleAll)
-    }
-
-    if ("todoToggle" in inputState) {
-        newState = todoToggle(newState, inputState.todoToggle)
-    }
-
-    return newState
+    return state
 }, TodosModel)
 inspect(todosState) // =>
 
@@ -85,7 +118,7 @@ function mainSection(todos) {
         placeholder: "What needs to be done?"
         , autofocus: true
     }), function (value) {
-        return { id: uuid(), title: value, completed: false }
+        return { id: uuid(), title: value.trim(), completed: false }
     })
 
     var toggleAll = toggleAllPool.change(h("input#toggle-all.toggle-all", {
@@ -99,20 +132,13 @@ function mainSection(todos) {
 
     // TODO: put stats-template in footer
     return h("section.todoapp", [
-        h("header.header", [
-            h("h1", "todos"),
-            newTodoInput
-        ]),
-        h("section.main", {
-            hidden: todos.length === 0
-        }, [
+        h("header.header", [ h("h1", "todos"), newTodoInput ]),
+        h("section.main", { hidden: todos.length === 0 }, [
             toggleAll,
             h("label", { htmlFor: "toggle-all" }, "Mark all as complete"),
             h("ul.todo-list", todos.map(todoItem))
         ]),
-        h("footer.footer", {
-            hidden: todos.length === 0
-        })
+        h("footer.footer", { hidden: todos.length === 0 })
     ])
 }
 
@@ -133,21 +159,33 @@ function infoFooter() {
 function todoItem(todo) {
     var todoToggle = todoTogglePool.change(h("input.toggle", {
         type: "checkbox", checked: todo.completed
-    }), function (checked) {
-        return { id: todo.id, completed: checked }
-    })
+    }), completed)
 
-    // TODO: wire up destroy
-    // TODO: wire up double click UI bullshit
-    // TODO: wire up editing blur / etc.
-    return h("li" + (todo.completed ? ".completed" : ""), [
-        h("div.view", [
-            todoToggle,
-            h("label", todo.title),
-            h("button.destroy")
-        ]),
-        h("input.edit", { value: todo.title })
+    var destroyTodo = destroyTodoPool.submit(h("button.destroy"), id)
+
+    var editLabel = editingTodoPool.on(h("label", todo.title), "dblclick", id)
+
+    var editInput = editTodoPool.submit(h("input.edit", {
+        value: todo.title,
+        focus: todo.editing
+    }), editSubmit)
+    editInput = editTodoPool.on(editInput, "blur", edit)
+
+    var classes = (todo.completed ? ".completed" : "") +
+        (todo.editing ? ".editing" : "")
+
+    return h("li" + classes, [
+        h("div.view", [ todoToggle, editLabel, destroyTodo ]),
+        editInput
     ])
+
+    function id() { return { id: todo.id } }
+
+    function completed(checked) { return { id: todo.id, completed: checked } }
+
+    function editSubmit(value) { return { id: todo.id, title: value } }
+
+    function edit(elem) { return { id: todo.id, title: elem.vlaue } }
 }
 
 var main = transform(todosState, function display(state) {
