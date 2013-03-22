@@ -14,7 +14,6 @@ var transformMany = Signal.transformMany
 var EventPool = Input.EventPool
 var Router = Input.Router
 
-
 // Application Model
 var TodoModel = { id: "", title: "", completed: false
     , editing: false, hidden: false }
@@ -25,8 +24,8 @@ var addTodoPool = EventPool("add-todo")
 var toggleAllPool = EventPool("toggle-all")
 var modifyTodoPool = EventPool("modify-todo")
 var clearCompletedPool = EventPool("clear-completed")
-
 var routes = Router()
+
 var events = mergeAll({
     addTodo: addTodoPool.signal,
     modifyTodo: modifyTodoPool.signal,
@@ -47,20 +46,16 @@ function addTodo(state, todo) {
 function modifyTodo(state, change) {
     return extend(state, {
         todos: state.todos.reduce(function (todos, todo) {
-            if (change.id !== todo.id) {
-                return todos.concat(todo)
-            } else if (change.title === "") {
-                return todos
-            } else {
-                return todos.concat(extend(todo, change))
-            }
+            return change.id !== todo.id ? todos.concat(todo) :
+                change.title === "" ? todos :
+                todos.concat(extend(todo, change))
         }, [])
     })
 }
 
 function toggleAll(state, toggled) {
     return extend(state, { todos: state.todos.map(function (todo) {
-        return { id: todo.id, title: todo.title, completed: toggled }
+        return extend(todo, { completed: toggled })
     }) })
 }
 
@@ -102,36 +97,6 @@ var todosState = foldp(input, function update(state, input) {
 inspect(todosState) // =>
 
 // Various template functions to render subsets of the UI
-function Header() {
-    return h("header.header", [
-        h("h1", "todos"),
-        addTodoPool.submit(h("input.new-todo", {
-            placeholder: "What needs to be done?"
-            , autofocus: true
-        }), function (value, target) {
-            // ;_; DOM.
-            target.value = ""
-
-            return { id: uuid(), title: value.trim()
-                , completed: false, editing: false, hidden: false }
-        })
-    ])
-}
-
-function InfoFooter() {
-    return h("footer.info", [
-        h("p", "Double-click to edit a todo"),
-        h("p", [
-            "Written by ",
-            h("a", { href: "https://github.com/Raynos" }, "Raynos")
-        ]),
-        h("p", [
-            "Part of ",
-            h("a", { href: "http://todomvc.com" }, "TodoMVC")
-        ])
-    ])
-}
-
 function mainSection(todos) {
     return h("section.main", { hidden: todos.length === 0 }, [
         toggleAllPool.change(h("input#toggle-all.toggle-all", {
@@ -200,14 +165,44 @@ function statsSection(state) {
             hidden: todosCompleted === 0
         }, "Clear completed (" + String(todosCompleted) + ")"))
     ])
+}
 
-    function link(uri, text, selected) {
-        return h("li", [
-            h("a" + (selected ? ".selected" : ""), {
-                href: uri
-            }, text)
+function link(uri, text, selected) {
+    return h("li", [
+        h("a" + (selected ? ".selected" : ""), {
+            href: uri
+        }, text)
+    ])
+}
+
+function Header() {
+    return h("header.header", [
+        h("h1", "todos"),
+        addTodoPool.submit(h("input.new-todo", {
+            placeholder: "What needs to be done?"
+            , autofocus: true
+        }), function (value, target) {
+            // OOPS. I touched the DOM.
+            target.value = ""
+
+            return { id: uuid(), title: value.trim()
+                , completed: false, editing: false, hidden: false }
+        })
+    ])
+}
+
+function InfoFooter() {
+    return h("footer.info", [
+        h("p", "Double-click to edit a todo"),
+        h("p", [
+            "Written by ",
+            h("a", { href: "https://github.com/Raynos" }, "Raynos")
+        ]),
+        h("p", [
+            "Part of ",
+            h("a", { href: "http://todomvc.com" }, "TodoMVC")
         ])
-    }
+    ])
 }
 
 var headerSection = Header()
