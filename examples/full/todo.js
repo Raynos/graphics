@@ -2,21 +2,17 @@ var uuid = require("uuid")
 var extend = require("xtend")
 var localStorage = require("global/window").localStorage
 
-var Signal = require("../../signal")
-var Input = require("../../input")
-var h = require("../../element").h
+var inspect = require("../../signal/inspect")
+var merge = require("../../signal/merge")
+var foldp = require("../../signal/foldp")
+var transform = require("../../signal/transform")
+var EventPool = require("../../input/event-pool")
+var Router = require("../../input/router")
+var h = require("../../element/html-element")
 var render = require("../../render")
 
-var inspect = Signal.inspect
-var merge = Signal.merge
-var foldp = Signal.foldp
-var transform = Signal.transform
-var EventPool = Input.EventPool
-var Router = Input.Router
-
 // Application Model
-var TodoModel = { id: "", title: "", completed: false
-    , editing: false, hidden: false }
+var TodoModel = { id: "", title: "", completed: false, editing: false }
 var TodosModel = { todos: [], route: "all" }
 
 // Inputs
@@ -162,9 +158,7 @@ function statsSection(state) {
 
 function link(uri, text, selected) {
     return h("li", [
-        h("a" + (selected ? ".selected" : ""), {
-            href: uri
-        }, text)
+        h("a" + (selected ? ".selected" : ""), { href: uri }, text)
     ])
 }
 
@@ -178,8 +172,8 @@ function Header() {
             // OOPS. I touched the DOM.
             target.value = ""
 
-            return { id: uuid(), title: value.trim()
-                , completed: false, editing: false, hidden: false }
+            return { id: uuid(), title: value.trim(),
+                completed: false, editing: false }
         })
     ])
 }
