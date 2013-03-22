@@ -22,7 +22,8 @@
     "uuid": "~1.4.1",
     "data-set": "~0.1.2",
     "class-list": "0.0.1",
-    "xtend": "~2.0.3"
+    "xtend": "~2.0.3",
+    "process": "~0.5.1"
   },
   "devDependencies": {
     "tape": "~0.2.2",

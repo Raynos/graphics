@@ -1,4 +1,5 @@
 var document = require("global/document")
+var process = require("process")
 
 var signal = require("../signal/signal")
 var TransformStorage = require("./transform-storage")
@@ -19,6 +20,11 @@ function EventPool(name){
     var storage = TransformStorage(name)
     var events = {}
     var _next
+    var nextTick = function (value, elem) {
+        process.nextTick(function () {
+            _next(value, elem)
+        })
+    }
 
     return {
         signal: signal(function (next) {
@@ -62,9 +68,8 @@ function EventPool(name){
                 return
             }
 
-            var item = fn(target.value)
-            target.value = ""
-            next(item)
+            var item = fn(target.value, target)
+            nextTick(item)
         })
 
         document.addEventListener("click", function (ev) {
@@ -75,8 +80,7 @@ function EventPool(name){
                 return
             }
 
-            var item = fn()
-            next(item)
+            nextTick(fn(), target)
         })
     }
 
@@ -89,8 +93,7 @@ function EventPool(name){
                 return
             }
 
-            var item = fn(target.value)
-            next(item)
+            nextTick(fn(target.value), target)
         })
 
         document.addEventListener("change", function (ev) {
@@ -101,8 +104,7 @@ function EventPool(name){
                 return
             }
 
-            var item = fn(target.checked)
-            next(item)
+            nextTick(fn(target.checked), target)
         })
     }
 
@@ -112,7 +114,7 @@ function EventPool(name){
             var fn = storage.get(event, target)
 
             if (fn) {
-                next(fn(target))
+                nextTick(fn(target.value, target))
             }
         }, true)
     }

@@ -5,4 +5,5 @@ module.exports = {
     , fps: require("./fps")
     , KeyboardArrows: require("./keyboard-arrows")
     , EventPool: require("./event-pool")
+    , Router: require("./router")
 }

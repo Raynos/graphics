@@ -1,148 +1,124 @@
 var uuid = require("uuid")
 var extend = require("xtend")
 
-var render = require("../../render")
 var Signal = require("../../signal")
 var Input = require("../../input")
-var Element = require("../../element")
+var h = require("../../element").h
+var render = require("../../render")
 
-var EventPool = Input.EventPool
 var inspect = Signal.inspect
 var transform = Signal.transform
 var mergeAll = Signal.mergeAll
 var foldp = Signal.foldp
-var h = Element.h
+var transformMany = Signal.transformMany
+var EventPool = Input.EventPool
+var Router = Input.Router
+
 
 // Application Model
-var TodoModel = { id: "", title: "", completed: false }
-var TodosModel = { todos: [] }
+var TodoModel = { id: "", title: "", completed: false
+    , editing: false, hidden: false }
+var TodosModel = { todos: [], route: "all" }
 
 // Inputs
-var newTodoPool = EventPool("new-todo")
+var addTodoPool = EventPool("add-todo")
 var toggleAllPool = EventPool("toggle-all")
-var todoTogglePool = EventPool("todo-toggle")
-var destroyTodoPool = EventPool("destroy-todo")
-var editingTodoPool = EventPool("editing-todo")
-var editTodoPool = EventPool("edit-todo")
+var modifyTodoPool = EventPool("modify-todo")
+var clearCompletedPool = EventPool("clear-completed")
 
-var input = mergeAll({
-    newTodo: newTodoPool.signal,
+var routes = Router()
+var events = mergeAll({
+    addTodo: addTodoPool.signal,
+    modifyTodo: modifyTodoPool.signal,
     toggleAll: toggleAllPool.signal,
-    todoToggle: todoTogglePool.signal,
-    destroyTodo: destroyTodoPool.signal,
-    editingTodo: editingTodoPool.signal,
-    editTodo: editTodoPool.signal
+    clearCompleted: clearCompletedPool.signal
+})
+var input = transformMany([routes, events], function (routes, events) {
+    return extend(events, { routes: routes })
 })
 inspect(input) // =>
 
 // State operations
-function newTodo(state, todo) {
-    if (todo.title === "") {
-        return state
-    }
+function addTodo(state, todo) {
+    return todo.title === "" ? state :
+        extend(state, { todos: state.todos.concat(todo) })
+}
 
-    return { todos: state.todos.concat(todo) }
+function modifyTodo(state, change) {
+    return extend(state, {
+        todos: state.todos.reduce(function (todos, todo) {
+            if (change.id !== todo.id) {
+                return todos.concat(todo)
+            } else if (change.title === "") {
+                return todos
+            } else {
+                return todos.concat(extend(todo, change))
+            }
+        }, [])
+    })
 }
 
 function toggleAll(state, toggled) {
-    return { todos: state.todos.map(function (todo) {
+    return extend(state, { todos: state.todos.map(function (todo) {
         return { id: todo.id, title: todo.title, completed: toggled }
-    }) }
+    }) })
 }
 
-function todoToggle(state, change) {
-    return { todos: state.todos.map(function (todo) {
-        if (change.id !== todo.id) {
-            return todo
-        } else {
-            return extend(todo, { completed: change.completed })
-        }
-    }) }
+function clearCompleted(state) {
+    return extend(state, { todos: state.todos.filter(function (todo) {
+        return !todo.completed
+    }) })
 }
 
-function destroyTodo(state, change) {
-    return { todos: state.todos.filter(function (todo) {
-        return todo.id !== change.id
-    }) }
-}
+function handleRoutes(state, routeEvent) {
+    var route = routeEvent.hash.slice(2) || "all"
 
-function editingTodo(state, change) {
-    return { todos: state.todos.map(function (todo) {
-        if (change.id !== todo.id) {
-            return extend(todo, { editing: false })
-        } else {
-            return extend(todo, { editing: true })
-        }
-    }) }
-}
+    return {
+        todos: state.todos.map(function (todo) {
+            var isHidden = route === "completed" && !todo.completed ?
+                true : route === "active" && todo.completed ?
+                true : false
 
-function editTodo(state, change) {
-    return { todos: state.todos.reduce(function (todos, todo) {
-        if (change.id !== todo.id)  {
-            return todos.concat(todo)
-        }
-
-        if (change.title === "") {
-            return todos
-        } else {
-            return todos.concat(extend(todo, {
-                editing: false, title: change.title
-            }))
-        }
-    }, []) }
+            return extend(todo, {
+                hidden: isHidden
+            })
+        }),
+        route: route
+    }
 }
 
 // Updating the current state
-var todosState = foldp(input, function update(state, inputState) {
-    if ("newTodo" in inputState) {
-        state = newTodo(state, inputState.newTodo)
-    } else if ("toggleAll" in inputState) {
-        state = toggleAll(state, inputState.toggleAll)
-    } else if ("todoToggle" in inputState) {
-        state = todoToggle(state, inputState.todoToggle)
-    } else if ("destroyTodo" in inputState) {
-        state = destroyTodo(state, inputState.destroyTodo)
-    } else if ("editingTodo" in inputState) {
-        state = editingTodo(state, inputState.editingTodo)
-    } else if ("editTodo" in inputState) {
-        state = editTodo(state, inputState.editTodo)
-    }
+var todosState = foldp(input, function update(state, input) {
+    state = (
+        "addTodo" in input ? addTodo(state, input.addTodo) :
+        "modifyTodo" in input ? modifyTodo(state, input.modifyTodo) :
+        "toggleAll" in input ? toggleAll(state, input.toggleAll) :
+        "clearCompleted" in input ?
+            clearCompleted(state, input.clearCompleted) :
+        state)
 
-    return state
+    return handleRoutes(state, input.routes)
 }, TodosModel)
 inspect(todosState) // =>
 
-// Displaying the scene
-function mainSection(todos) {
-    var newTodoInput = newTodoPool.submit(h("input.new-todo", {
-        placeholder: "What needs to be done?"
-        , autofocus: true
-    }), function (value) {
-        return { id: uuid(), title: value.trim(), completed: false }
-    })
+// Various template functions to render subsets of the UI
+function Header() {
+    return h("header.header", [
+        h("h1", "todos"),
+        addTodoPool.submit(h("input.new-todo", {
+            placeholder: "What needs to be done?"
+            , autofocus: true
+        }), function (value, target) {
+            // ;_; DOM.
+            target.value = ""
 
-    var toggleAll = toggleAllPool.change(h("input#toggle-all.toggle-all", {
-        type: "checkbox",
-        checked: todos.every(function (todo) {
-            return todo.completed
+            return { id: uuid(), title: value.trim()
+                , completed: false, editing: false, hidden: false }
         })
-    }), function (checked) {
-        return checked
-    })
-
-    // TODO: put stats-template in footer
-    return h("section.todoapp", [
-        h("header.header", [ h("h1", "todos"), newTodoInput ]),
-        h("section.main", { hidden: todos.length === 0 }, [
-            toggleAll,
-            h("label", { htmlFor: "toggle-all" }, "Mark all as complete"),
-            h("ul.todo-list", todos.map(todoItem))
-        ]),
-        h("footer.footer", { hidden: todos.length === 0 })
     ])
 }
 
-function infoFooter() {
+function InfoFooter() {
     return h("footer.info", [
         h("p", "Double-click to edit a todo"),
         h("p", [
@@ -156,47 +132,98 @@ function infoFooter() {
     ])
 }
 
+function mainSection(todos) {
+    return h("section.main", { hidden: todos.length === 0 }, [
+        toggleAllPool.change(h("input#toggle-all.toggle-all", {
+            type: "checkbox",
+            checked: todos.every(function (todo) {
+                return todo.completed
+            })
+        })),
+        h("label", { htmlFor: "toggle-all" }, "Mark all as complete"),
+        h("ul.todo-list", todos.filter(function (todo) {
+            return !todo.hidden
+        }).map(todoItem))
+    ])
+}
+
 function todoItem(todo) {
-    var todoToggle = todoTogglePool.change(h("input.toggle", {
-        type: "checkbox", checked: todo.completed
-    }), completed)
-
-    var destroyTodo = destroyTodoPool.submit(h("button.destroy"), id)
-
-    var editLabel = editingTodoPool.on(h("label", todo.title), "dblclick", id)
-
-    var editInput = editTodoPool.submit(h("input.edit", {
+    var editBox = h("input.edit", {
         value: todo.title,
         focus: todo.editing
-    }), editSubmit)
-    editInput = editTodoPool.on(editInput, "blur", edit)
+    })
+    editBox = modifyTodoPool.submit(editBox, edit)
+    editBox = modifyTodoPool.on(editBox, "blur", edit)
 
     var classes = (todo.completed ? ".completed" : "") +
         (todo.editing ? ".editing" : "")
 
     return h("li" + classes, [
-        h("div.view", [ todoToggle, editLabel, destroyTodo ]),
-        editInput
+        h("div.view", [
+            modifyTodoPool.change(h("input.toggle", {
+                type: "checkbox", checked: todo.completed
+            }), completed),
+            modifyTodoPool.on(h("label", todo.title), "dblclick", editing),
+            modifyTodoPool.submit(h("button.destroy"), destroy)
+        ]),
+        editBox
     ])
 
-    function id() { return { id: todo.id } }
-
+    function edit(value) {
+        return { id: todo.id, title: value, editing: false }
+    }
+    function editing() { return { id: todo.id, editing: true } }
     function completed(checked) { return { id: todo.id, completed: checked } }
-
-    function editSubmit(value) { return { id: todo.id, title: value } }
-
-    function edit(elem) { return { id: todo.id, title: elem.vlaue } }
+    function destroy() { return { id: todo.id, title: "" } }
 }
 
-var main = transform(todosState, function display(state) {
+function statsSection(state) {
     var todos = state.todos
+    var todosLeft = todos.filter(function (todo) {
+        return todo.completed === false
+    }).length
+    var todosCompleted = todos.length - todosLeft
 
+    return h("footer.footer", {
+        hidden: todos.length === 0
+    }, [
+        h("span.todo-count", [
+            h("strong", String(todosLeft)),
+            " item" + (todos.length !== 1 ? "s" : "") + " left"
+        ]),
+        h("ul.filters", [
+            link("#/", "All", state.route === "all"),
+            link("#/active", "Active", state.route === "active"),
+            link("#/completed", "Completed", state.route === "completed")
+        ]),
+        clearCompletedPool.submit(h("button.clear-completed", {
+            hidden: todosCompleted === 0
+        }, "Clear completed (" + String(todosCompleted) + ")"))
+    ])
+
+    function link(uri, text, selected) {
+        return h("li", [
+            h("a" + (selected ? ".selected" : ""), {
+                href: uri
+            }, text)
+        ])
+    }
+}
+
+var headerSection = Header()
+var infoFooter = InfoFooter()
+
+var app = transform(todosState, function display(state) {
     return h("div.todomvc-wrapper", [
-        mainSection(todos),
-        infoFooter()
+        h("section.todoapp", [
+            headerSection,
+            mainSection(state.todos),
+            statsSection(state)
+        ]),
+        infoFooter
     ])
 })
 
 // Render scene
-render(main, false)
+render(app, false)
 // =>

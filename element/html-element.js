@@ -96,8 +96,9 @@ HtmlElement.prototype.create = function _HtmlElement_create() {
 // TODO: Be more efficient
 HtmlElement.prototype.update = function _HtmlElement_update(elem, previous) {
     var parentElem = elem.parentNode
+    var replacement = this.create()
 
-    parentElem.replaceChild(this.create(), elem)
+    parentElem.replaceChild(replacement, elem)
 }
 
 h.HtmlElement = HtmlElement

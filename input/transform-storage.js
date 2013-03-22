@@ -8,20 +8,13 @@ var Element = require("../element/element")
 module.exports = TransformStorage
 
 function TransformStorage(name) {
-    var fns = {}
-    var nameSection = name + "~" + uuid() + "~"
+    // var fns = {}
+    var nameSection = "graphicsId~" + name + "~" + uuid() + "~"
 
     return {
         get: function getTransform(type, target) {
             var ds = DataSet(target)
-            var id = ds["graphicsId~" + type]
-
-            if (!id || id.indexOf(nameSection) !== 0) {
-                return null
-            }
-
-            var itemId = id.substr(nameSection.length) || null
-            var fn = fns[type] && fns[type][itemId]
+            var fn = ds[nameSection + type]
 
             return fn || null
         },
@@ -29,15 +22,9 @@ function TransformStorage(name) {
             var basicElement = elem.basicElement
             var specialProperties = basicElement.specialProperties
             var dataset = specialProperties.dataset
-            var id = uuid()
 
-            if (!fns[type]) {
-                fns[type] = {}
-            }
-
-            fns[type][id] = transform
             var datasetProps = {}
-            datasetProps["graphicsId~" + type] = nameSection + id
+            datasetProps[nameSection + type] = transform || id
 
             specialProperties = extend(specialProperties, {
                 dataset: extend(dataset, datasetProps)
@@ -54,3 +41,5 @@ function TransformStorage(name) {
         }
     }
 }
+
+function id(x) { return x }
