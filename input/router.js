@@ -7,6 +7,12 @@ module.exports = Router
 
 function Router(uri) {
     return signal(function (next) {
+        next({
+            hash: document.location.hash,
+            newURL: document.location.href,
+            oldURL: document.location.href
+        })
+
         window.addEventListener("hashchange", function (ev) {
             next({
                 hash: document.location.hash,
@@ -14,9 +20,5 @@ function Router(uri) {
                 oldURL: ev.oldURL
             })
         })
-    }, {
-        hash: document.location.hash,
-        newURL: document.location.href,
-        oldURL: document.location.href
     })
 }

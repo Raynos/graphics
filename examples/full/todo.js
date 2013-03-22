@@ -1,5 +1,6 @@
 var uuid = require("uuid")
 var extend = require("xtend")
+var localStorage = require("global/window").localStorage
 
 var Signal = require("../../signal")
 var Input = require("../../input")
@@ -7,10 +8,9 @@ var h = require("../../element").h
 var render = require("../../render")
 
 var inspect = Signal.inspect
-var transform = Signal.transform
-var mergeAll = Signal.mergeAll
+var merge = Signal.merge
 var foldp = Signal.foldp
-var transformMany = Signal.transformMany
+var transform = Signal.transform
 var EventPool = Input.EventPool
 var Router = Input.Router
 
@@ -26,78 +26,69 @@ var modifyTodoPool = EventPool("modify-todo")
 var clearCompletedPool = EventPool("clear-completed")
 var routes = Router()
 
-var events = mergeAll({
-    addTodo: addTodoPool.signal,
-    modifyTodo: modifyTodoPool.signal,
-    toggleAll: toggleAllPool.signal,
-    clearCompleted: clearCompletedPool.signal
-})
-var input = transformMany([routes, events], function (routes, events) {
-    return extend(events, { routes: routes })
-})
-inspect(input) // =>
-
 // State operations
-function addTodo(state, todo) {
-    return todo.title === "" ? state :
-        extend(state, { todos: state.todos.concat(todo) })
-}
-
-function modifyTodo(state, change) {
-    return extend(state, {
-        todos: state.todos.reduce(function (todos, todo) {
-            return change.id !== todo.id ? todos.concat(todo) :
-                change.title === "" ? todos :
-                todos.concat(extend(todo, change))
-        }, [])
-    })
-}
-
-function toggleAll(state, toggled) {
-    return extend(state, { todos: state.todos.map(function (todo) {
-        return extend(todo, { completed: toggled })
-    }) })
-}
-
-function clearCompleted(state) {
-    return extend(state, { todos: state.todos.filter(function (todo) {
-        return !todo.completed
-    }) })
-}
-
-function handleRoutes(state, routeEvent) {
-    var route = routeEvent.hash.slice(2) || "all"
-
-    return {
-        todos: state.todos.map(function (todo) {
-            var isHidden = route === "completed" && !todo.completed ?
-                true : route === "active" && todo.completed ?
-                true : false
-
-            return extend(todo, {
-                hidden: isHidden
-            })
-        }),
-        route: route
+var addTodo = transform(addTodoPool.signal, function (todo) {
+    return function (state) {
+        return todo.title === "" ? state :
+            extend(state, { todos: state.todos.concat(todo) })
     }
-}
+})
+var modifyTodo = transform(modifyTodoPool.signal, function (change) {
+    return function (state) {
+        return extend(state, {
+            todos: state.todos.reduce(function (todos, todo) {
+                return change.id !== todo.id ? todos.concat(todo) :
+                    change.title === "" ? todos :
+                    todos.concat(extend(todo, change))
+            }, [])
+        })
+    }
+})
+var toggleAll = transform(toggleAllPool.signal, function (toggled) {
+    return function (state) {
+        return extend(state, { todos: state.todos.map(function (todo) {
+            return extend(todo, { completed: toggled })
+        }) })
+    }
+})
+var clearCompleted = transform(clearCompletedPool.signal, function () {
+    return function (state) {
+        return extend(state, { todos: state.todos.filter(function (todo) {
+            return !todo.completed
+        }) })
+    }
+})
+var handleRoutes = transform(routes, function (routeEvent) {
+    return function (state) {
+        return extend(state, { route: routeEvent.hash.slice(2) || "all" })
+    }
+})
+
+var input = merge([addTodo, modifyTodo, toggleAll,
+    clearCompleted, handleRoutes])
+
+inspect(merge([addTodoPool.signal, modifyTodoPool.signal, toggleAllPool.signal,
+    clearCompletedPool.signal, routes]))
+// =>
+
+var storedState = localStorage.getItem("todos-graphics")
+var initialState = storedState ? JSON.parse(storedState) : TodosModel
 
 // Updating the current state
-var todosState = foldp(input, function update(state, input) {
-    state = (
-        "addTodo" in input ? addTodo(state, input.addTodo) :
-        "modifyTodo" in input ? modifyTodo(state, input.modifyTodo) :
-        "toggleAll" in input ? toggleAll(state, input.toggleAll) :
-        "clearCompleted" in input ?
-            clearCompleted(state, input.clearCompleted) :
-        state)
-
-    return handleRoutes(state, input.routes)
-}, TodosModel)
+var todosState = foldp(input, function update(state, modification) {
+    return modification(state)
+}, initialState)
 inspect(todosState) // =>
 
+todosState(function (value) {
+    localStorage.setItem("todos-graphics", JSON.stringify(value))
+})
+
 // Various template functions to render subsets of the UI
-function mainSection(todos) {
+function mainSection(state) {
+    var todos = state.todos
+    var route = state.route
+
     return h("section.main", { hidden: todos.length === 0 }, [
         toggleAllPool.change(h("input#toggle-all.toggle-all", {
             type: "checkbox",
@@ -107,7 +98,9 @@ function mainSection(todos) {
         })),
         h("label", { htmlFor: "toggle-all" }, "Mark all as complete"),
         h("ul.todo-list", todos.filter(function (todo) {
-            return !todo.hidden
+            return route === "completed" && todo.completed ||
+                route === "active" && !todo.completed ||
+                route === "all"
         }).map(todoItem))
     ])
 }
@@ -212,7 +205,7 @@ var app = transform(todosState, function display(state) {
     return h("div.todomvc-wrapper", [
         h("section.todoapp", [
             headerSection,
-            mainSection(state.todos),
+            mainSection(state),
             statsSection(state)
         ]),
         infoFooter
