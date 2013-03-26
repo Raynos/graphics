@@ -1,10 +1,12 @@
 var document = require("global/document")
 var ClassList = require("class-list")
 var DataSet = require("data-set")
+var setTimeout = require("timers").setTimeout
 
 var plainText = require("./plain-text")
 var Element = require("./element")
 
+var NOT_FOUND = -1
 var splitSelectorRegex = /([\.#]?[a-zA-Z0-9_-]+)/
 
 function TextElement(text) {
@@ -19,7 +21,7 @@ TextElement.prototype.create = function _TextElement_create() {
 
 TextElement.prototype.update = function _TextElement_update(elem, previous) {
     if (this.text !== previous.text) {
-        elem.value = this.text
+        elem.data = this.text
     }
 }
 
@@ -38,6 +40,8 @@ function HtmlElement(tagName, special, general, children) {
     this.specialProperties = special
     this.generalProperties = general
     this.children = children
+    this.cl = null // elem.classList
+    this.ds = null // elem.dataset
 }
 
 HtmlElement.prototype.type = "HtmlElement"
@@ -55,30 +59,25 @@ HtmlElement.prototype.create = function _HtmlElement_create() {
         elem[generalKey] = generalProp
     }
 
+
     var specialProperties = this.specialProperties
     var classes = specialProperties.classes
-    var cl = ClassList(elem)
+    var cl = this.cl = ClassList(elem)
 
     for (var j = 0; j < classes.length; j++) {
         cl.add(classes[j])
     }
 
+
     var dataset = specialProperties.dataset
     var datasetKeys = Object.keys(dataset)
-    var ds = DataSet(elem)
+    var ds = this.ds = DataSet(elem)
 
     for (var k = 0; k < datasetKeys.length; k++) {
         var datasetKey = datasetKeys[k]
         var datasetAttr = dataset[datasetKey]
 
         ds[datasetKey] = datasetAttr
-    }
-
-    // Many hacks :(
-    if (specialProperties.focus) {
-        process.nextTick(function () {
-            elem.focus()
-        })
     }
 
     var children = this.children
@@ -90,15 +89,129 @@ HtmlElement.prototype.create = function _HtmlElement_create() {
         elem.appendChild(domElement)
     }
 
+    handleFocus(elem, specialProperties)
+
     return elem
+}
+
+function handleFocus(elem, specialProperties) {
+    // Many hacks :(
+    if (specialProperties.focus) {
+        setTimeout(function () {
+            elem.focus()
+        }, 0)
+    }
 }
 
 // TODO: Be more efficient
 HtmlElement.prototype.update = function _HtmlElement_update(elem, previous) {
     var parentElem = elem.parentNode
-    var replacement = this.create()
+    var current = this
 
-    parentElem.replaceChild(replacement, elem)
+    if (current.tagName !== previous.tagName) {
+        var replacement = current.create()
+        return parentElem.replaceChild(replacement, elem)
+    }
+
+    handleProperties(previous, current, elem)
+    handleClasses(previous, current)
+    handleDataSet(previous, current)
+
+    var currChildren = current.children
+    var currLength = currChildren.length
+    var prevChildren = previous.children
+    var prevLength = prevChildren.length
+    var childNodes = elem.childNodes
+
+
+    var smallestLength = prevLength < currLength ?
+        prevLength : currLength
+
+    // if curr list smaller then prev then nuke excess DOM elems
+    for (var i = prevLength; i > currLength; i--) {
+        elem.removeChild(childNodes[currLength])
+    }
+
+    // for all elements that are in both arrays
+    for (var j = 0; j < smallestLength; j++) {
+        var currChild = currChildren[j]
+        var prevChild = prevChildren[j]
+
+        currChild.update(childNodes[j], prevChild)
+    }
+
+    // for all elements that are in curr but not prev
+    for (var k = prevLength; k < currLength; k++) {
+        var child = currChildren[k]
+        var domElement = child.create ? child.create() : child
+
+        elem.appendChild(domElement)
+    }
+
+    handleFocus(elem, current.specialProperties)
+}
+
+function handleDataSet(previous, current) {
+    var currDataset = current.specialProperties.dataset
+    var prevDataset = current.specialProperties.dataset
+    var ds = current.ds = previous.ds
+
+    var prevDataSetKeys = Object.keys(prevDataset)
+    for (var i = 0; i < prevDataSetKeys.length; i++) {
+        var key = prevDataSetKeys[i]
+        if (!(key in currDataset)) {
+            delete ds[key]
+        }
+    }
+
+    var currDataSetKeys = Object.keys(currDataset)
+
+    for (var j = 0; j < currDataSetKeys.length; j++) {
+        var datasetKey = currDataSetKeys[j]
+        var datasetAttr = currDataset[datasetKey]
+
+        ds[datasetKey] = datasetAttr
+    }
+}
+
+function handleProperties(previous, current, elem) {
+    var currGeneral = current.generalProperties
+    var prevGeneral = previous.generalProperties
+
+    var currGeneralKeys = Object.keys(currGeneral)
+    for (var i = 0; i < currGeneralKeys.length; i++) {
+        var currGeneralKey = currGeneralKeys[i]
+        var currGeneralProp = currGeneral[currGeneralKey]
+        var prevGeneralProp = prevGeneral[currGeneralKey]
+
+        if (currGeneralProp !== prevGeneralProp) {
+            elem[currGeneralKey] = currGeneralProp
+        }
+    }
+}
+
+function handleClasses(previous, current) {
+    var currClasses = current.specialProperties.classes
+    var prevClasses = previous.specialProperties.classes
+    var cl = current.cl = previous.cl
+
+    for (var j = 0; j < prevClasses.length; j++) {
+        var className = prevClasses[j]
+        var index = currClasses.indexOf(className)
+
+        if (index === NOT_FOUND) {
+            cl.remove(className)
+        }
+    }
+
+    for (var k = 0; k < currClasses.length; k++) {
+        var className = currClasses[k]
+        var index = prevClasses.indexOf(className)
+
+        if (index === NOT_FOUND) {
+            cl.add(className)
+        }
+    }
 }
 
 h.HtmlElement = HtmlElement
@@ -106,32 +219,31 @@ h.HtmlElement = HtmlElement
 module.exports = h
 
 function h(selector, attributes, children) {
-    var matches = selector.split(/([\.#]?[a-zA-Z0-9_-]+)/)
     if (typeof attributes === "string" || Array.isArray(attributes)) {
         children = attributes
         attributes = {}
     }
 
+    var hElement = new HtmlElement("", {
+        classes: [], dataset: {}, focus: false
+    }, {}, [])
+
+    unpackAttributes(hElement, attributes)
+    unpackSelector(hElement, selector)
+    unpackChildren(hElement, children)
+
+    return new Element(hElement, -1, -1)
+}
+
+function unpackAttributes(hElement, attributes) {
     if (!attributes) {
-        attributes = {}
+        return
     }
 
-    if (!children) {
-        children = []
-    }
-
-    var general = {}
-    var special = {
-        classes: [],
-        dataset: {}
-    }
-    var classes = special.classes
+    var special = hElement.specialProperties
     var dataset = special.dataset
-    var tagName = ""
-
-    if (typeof children === "string") {
-        children = [children]
-    }
+    var classes = special.classes
+    var general = hElement.generalProperties
 
     // TODO: Handle special attributes and put them in special hash
     var attributesKeys = Object.keys(attributes)
@@ -148,6 +260,12 @@ function h(selector, attributes, children) {
             general[key] = attribute
         }
     }
+}
+
+function unpackSelector(hElement, selector) {
+    var matches = selector.split(splitSelectorRegex)
+    var classes = hElement.specialProperties.classes
+    var general = hElement.generalProperties
 
     for (var j = 0; j < matches.length; j++) {
         var match = matches[j]
@@ -158,9 +276,21 @@ function h(selector, attributes, children) {
         } else if (match[0] === "#") {
             general.id = value
         } else if (match.length > 0) {
-            tagName = match
+            hElement.tagName = match
         }
     }
+}
+
+function unpackChildren(hElement, children) {
+    if (!children) {
+        return
+    }
+
+    if (typeof children === "string") {
+        children = [children]
+    }
+
+    var elChildren = hElement.children
 
     for (var k = 0; k < children.length; k++) {
         var child = children[k]
@@ -170,6 +300,5 @@ function h(selector, attributes, children) {
         }
     }
 
-    return new Element(new HtmlElement(tagName, special, general, children)
-        , -1, -1)
+    hElement.children = children
 }
